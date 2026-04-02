@@ -1,10 +1,9 @@
 import UIKit
 import SnapKit
 
-class TodayView: UIView {
-    
+class ThreeDaysView: UIView {
     var data: ForecastResponse?
-    var hoursData: [Hour] = []
+    var daysData: [ForecastDay] = []
     private let weatherService = WeatherService(client: URLSessionHTTPClient())
     
     private let containerHours: UIView = {
@@ -15,13 +14,13 @@ class TodayView: UIView {
     }()
     
     private let imageClock: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "clock"))
+        let imageView = UIImageView(image: UIImage(systemName: "calendar"))
         imageView.tintColor = .white
         return imageView
     }()
     private let labelTodayHours: UILabel = {
         let label = UILabel()
-        label.text = "hourly forecast".uppercased()
+        label.text = "3-day forecast".uppercased()
         label.textAlignment = .left
         label.font = UIFont.systemFont(ofSize: 18, weight: .regular)
         label.textColor = .white
@@ -32,59 +31,52 @@ class TodayView: UIView {
     
     private let collectionView: UICollectionView = {
         let layout = UICollectionViewFlowLayout()
-        layout.scrollDirection = .horizontal
-        layout.itemSize = CGSize(width: 55, height: 120)
+        layout.itemSize = CGSize(width: 320, height: 40)
         layout.minimumLineSpacing = 12
         layout.minimumInteritemSpacing = 12
 
         let collectionView = UICollectionView(frame: .zero,
                                               collectionViewLayout: layout)
-        collectionView.register(HourView.self,
-                                forCellWithReuseIdentifier: HourView.identifier)
+        collectionView.register(DaysView.self,
+                                forCellWithReuseIdentifier: DaysView.identifier)
         collectionView.alwaysBounceHorizontal = true
         collectionView.backgroundColor = .clear
         collectionView.showsHorizontalScrollIndicator = false
+        collectionView.isScrollEnabled = false
         return collectionView
     }()
     
-    
     override init(frame: CGRect) {
         super.init(frame: frame)
-        hoursData = getHoursData()
         collectionView.delegate = self
         collectionView.dataSource = self
         setupView()
     }
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     func configure(data: ForecastResponse) {
         self.data = data
-        hoursData = getHoursData()
         self.collectionView.reloadData()
+        daysData = getDaysData()
         DispatchQueue.main.async {
             print(self.collectionView.contentSize)
         }
     }
     
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
     private func setupView() {
         addSubview(containerHours)
-        
         containerHours.addSubview(imageClock)
         containerHours.addSubview(labelTodayHours)
         containerHours.addSubview(devider)
         containerHours.addSubview(collectionView)
-        
         containerHours.snp.makeConstraints { make in
-            make.top.equalToSuperview()//equalTo(labelMaxMin.snp.bottom).offset(CGFloat.adaptive(20, 40))
+            make.top.equalToSuperview()
             make.centerX.equalToSuperview()
             make.horizontalEdges.equalToSuperview().inset(CGFloat.adaptive(20, 40))
-            //make.height.equalTo(CGFloat.adaptive(200, 300))
             make.bottom.equalToSuperview()
         }
-        
         imageClock.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(CGFloat.adaptive(10, 15))
             make.leading.equalToSuperview().offset(CGFloat.adaptive(14, 30))
@@ -101,65 +93,70 @@ class TodayView: UIView {
             make.height.equalTo(1)
             make.horizontalEdges.equalToSuperview().inset(CGFloat.adaptive(14, 30))
         }
-        
         collectionView.snp.makeConstraints { make in
             make.top.equalTo(devider.snp.bottom).offset(CGFloat.adaptive(14, 30))
             make.bottom.equalToSuperview().inset(CGFloat.adaptive(14, 30))
             make.horizontalEdges.equalToSuperview().inset(CGFloat.adaptive(14, 30))
         }
     }
-}
-
-extension TodayView: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return hoursData.count
-    }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        let cell = collectionView.dequeueReusableCell(
-            withReuseIdentifier: HourView.identifier,
-            for: indexPath
-        ) as! HourView
-        cell.configure(
-            hour: indexPath.row == 0 ? "Now" : String(hoursData[indexPath.row].time.suffix(5)),
-            image: hoursData[indexPath.row].condition.icon,//"person",
-            temperature: hoursData[indexPath.row].temp_c.description)
-        return cell
-    }
-    
-    func getHoursData() -> [Hour] {
-      guard let result = data?.forecast.forecastday.first?.hour.filter({ filterHourNow(data: $0.time) }) else {
+    func getDaysData() -> [ForecastDay] {
+        guard let result = data?.forecast.forecastday else {
             return []
         }
         return result
     }
-    
-    func filterHourNow(data: String ) -> Bool {
-        let format: String = "yyyy-MM-dd HH:mm"
-        let formatter = DateFormatter()
-        formatter.dateFormat = format
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone.current
-        guard let date = formatter.date(from: data) else {
-            return false
-        }
-        let calendar = Calendar.current
-        guard calendar.isDateInToday(date) else {
-            return false
-        }
-        let inputHour = calendar.component(.hour, from: date)
-        let currentHour = calendar.component(.hour, from: Date())
-        return inputHour >= currentHour
-    }
 }
 
-class HourView: UICollectionViewCell {
-    static let identifier = "HourView"
-    private let hourLabel: UILabel = {
+extension ThreeDaysView: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        print(daysData.count)
+        return daysData.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let cell = collectionView.dequeueReusableCell(
+            withReuseIdentifier: DaysView.identifier,
+            for: indexPath
+        ) as! DaysView
+        cell.configure(
+            day: indexPath.row == 0 ? "Today" : getWeekday(from: String(daysData[indexPath.row].date)) ?? "-",
+            image: daysData[indexPath.row].day.condition.icon,
+            temperature: daysData[indexPath.row].day.mintemp_c.description + " / " + daysData[indexPath.row].day .maxtemp_c.description)
+        return cell
+    }
+    
+    func getWeekday(from dateString: String) -> String? {
+        // Формат вашей даты (пример: "2024-01-15" или "2024-01-15 12:00")
+        let inputFormat = "yyyy-MM-dd" // Измените под ваш формат
+        
+        let formatter = DateFormatter()
+        formatter.dateFormat = inputFormat
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone.current
+        
+        guard let date = formatter.date(from: dateString) else {
+            return nil
+        }
+        
+        // Получаем день недели на английском
+        let weekdayFormatter = DateFormatter()
+        weekdayFormatter.dateFormat = "EEEE" // Полное название (Monday)
+        // weekdayFormatter.dateFormat = "EEE" // Сокращенное (Mon)
+        weekdayFormatter.locale = Locale(identifier: "en_US") // Английский язык
+        
+        return weekdayFormatter.string(from: date)
+    }
+    
+}
+
+class DaysView: UICollectionViewCell {
+    static let identifier = "DaysView"
+    private let dayLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
         label.textColor = .white
-        label.text = "NOW"
+        label.text = "Today"
         return label
     }()
     
@@ -189,10 +186,10 @@ class HourView: UICollectionViewCell {
     }
     
     private func setupView() {
-        let stack = UIStackView(arrangedSubviews: [hourLabel, imageView, temperatureLabel])
+        let stack = UIStackView(arrangedSubviews: [dayLabel, imageView, temperatureLabel])
         stack.alignment = .center
         stack.distribution = .equalCentering
-        stack.axis = .vertical
+        stack.axis = .horizontal
         
         addSubview(stack)
         stack.snp.makeConstraints { make in
@@ -200,12 +197,12 @@ class HourView: UICollectionViewCell {
         }
         
         imageView.snp.makeConstraints { make in
-            make.height.equalTo(CGFloat.adaptive(30, 60))
+            make.size.equalTo(CGFloat.adaptive(40, 80))
         }
     }
     
-    func configure(hour: String, image: String, temperature: String) {
-        hourLabel.text = hour
+    func configure(day: String, image: String, temperature: String) {
+        dayLabel.text = day
         imageView.loadImage(from: image)
         temperatureLabel.text = temperature
     }

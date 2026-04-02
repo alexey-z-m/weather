@@ -63,7 +63,7 @@ class ViewController: UIViewController {
     }()
     
     private let todayView = TodayView()
-    private let tenDaysView = TenDaysView()
+    private let tenDaysView = ThreeDaysView()
         
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return .lightContent
@@ -171,6 +171,7 @@ class ViewController: UIViewController {
         }
         weatherEffectManager.applyEffect(for: data.current.condition.code)
         todayView.configure(data: data)
+        tenDaysView.configure(data: data)
     }
     
     private func refreshData(lat: Double, lon: Double) {
@@ -260,7 +261,7 @@ class ViewController: UIViewController {
         tenDaysView.snp.makeConstraints { make in
             make.top.equalTo(todayView.snp.bottom).offset(CGFloat.adaptive(20, 40))
             make.horizontalEdges.equalToSuperview()
-            make.height.equalTo(CGFloat.adaptive(600, 600))
+            make.height.equalTo(CGFloat.adaptive(200, 300))
             make.bottom.equalToSuperview().offset(-CGFloat.adaptive(20, 40))
         }
     }
