@@ -13,13 +13,13 @@ class TenDaysView: UIView {
     }()
     
     private let imageClock: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "clock"))
+        let imageView = UIImageView(image: UIImage(systemName: "calendar"))
         imageView.tintColor = .white
         return imageView
     }()
     private let labelTodayHours: UILabel = {
         let label = UILabel()
-        label.text = "Today"
+        label.text = "10-day forecast".uppercased()
         label.textAlignment = .left
         label.font = UIFont.systemFont(ofSize: 18, weight: .regular)
         label.textColor = .white
@@ -65,11 +65,30 @@ class TenDaysView: UIView {
     
     private func setupView() {
         addSubview(containerHours)
+        containerHours.addSubview(imageClock)
+        containerHours.addSubview(labelTodayHours)
+        containerHours.addSubview(devider)
         containerHours.snp.makeConstraints { make in
             make.top.equalToSuperview()
             make.centerX.equalToSuperview()
             make.horizontalEdges.equalToSuperview().inset(CGFloat.adaptive(20, 40))
             make.bottom.equalToSuperview()
+        }
+        imageClock.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(CGFloat.adaptive(10, 15))
+            make.leading.equalToSuperview().offset(CGFloat.adaptive(14, 30))
+            make.size.equalTo(CGFloat.adaptive(20, 40))
+        }
+        labelTodayHours.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(CGFloat.adaptive(10, 15))
+            make.trailing.equalToSuperview().inset(CGFloat.adaptive(14, 30))
+            make.leading.equalTo(imageClock.snp.trailing).offset(CGFloat.adaptive(14, 30))
+        }
+        devider.backgroundColor = .white.withAlphaComponent(0.1)
+        devider.snp.makeConstraints { make in
+            make.top.equalTo(labelTodayHours.snp.bottom).offset(CGFloat.adaptive(14, 30))
+            make.height.equalTo(1)
+            make.horizontalEdges.equalToSuperview().inset(CGFloat.adaptive(14, 30))
         }
     }
 }
@@ -86,7 +105,7 @@ extension TenDaysView: UICollectionViewDataSource, UICollectionViewDelegateFlowL
         ) as! HourView
         cell.configure(
             hour: indexPath.row == 0 ? "Now" : String(getHoursData()[indexPath.row].time.suffix(5)),
-            image: "person",
+            image: getHoursData()[indexPath.row].condition.icon,
             temperature: getHoursData()[indexPath.row].temp_c.description)
         return cell
     }

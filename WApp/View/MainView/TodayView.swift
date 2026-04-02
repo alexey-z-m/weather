@@ -20,7 +20,7 @@ class TodayView: UIView {
     }()
     private let labelTodayHours: UILabel = {
         let label = UILabel()
-        label.text = "Today"
+        label.text = "hourly forecast".uppercased()
         label.textAlignment = .left
         label.font = UIFont.systemFont(ofSize: 18, weight: .regular)
         label.textColor = .white
@@ -119,7 +119,7 @@ extension TodayView: UICollectionViewDataSource, UICollectionViewDelegateFlowLay
         ) as! HourView
         cell.configure(
             hour: indexPath.row == 0 ? "Now" : String(getHoursData()[indexPath.row].time.suffix(5)),
-            image: "person",
+            image: getHoursData()[indexPath.row].condition.icon,//"person",
             temperature: getHoursData()[indexPath.row].temp_c.description)
         return cell
     }
@@ -203,7 +203,7 @@ class HourView: UICollectionViewCell {
     
     func configure(hour: String, image: String, temperature: String) {
         hourLabel.text = hour
-        imageView.image = UIImage(systemName: image)
+        imageView.loadImage(from: image)
         temperatureLabel.text = temperature
     }
 }
